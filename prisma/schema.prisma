@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Genero {
+  MASCULINO
+  FEMININO
+}
+
+enum EstadoCivil {
+  SOLTEIRO
+  CASADO
+  DIVORCIADO
+  VIUVO
+  UNIAO_ESTAVEL
+}
+
+model Usuario {
+  id              String       @id @default(uuid())
+  email           String       @unique
+  senhaHash       String
+  foto            String?
+  nome            String
+  sobrenome       String
+  dataAniversario DateTime?
+  genero          Genero?
+  estadoCivil     EstadoCivil?
+  logradouro      String?
+  bairro          String?
+  cidade          String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
