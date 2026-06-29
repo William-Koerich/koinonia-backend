@@ -27,6 +27,9 @@ export class LoginService {
         nome: usuario.nome,
         sobrenome: usuario.sobrenome,
         email: usuario.email,
+        foto: usuario.foto,
+        tipo: usuario.tipo,
+        ativo: usuario.ativo,
       },
     }
   }
