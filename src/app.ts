@@ -3,6 +3,9 @@ import cors from "cors";
 import path from "path";
 import usuarioRoutes from "./modules/usuario/routes/usuario";
 import authRoutes from "./modules/auth/routes/auth";
+import ministerioRoutes from "./modules/ministerio/ministerio.routes";
+import eventoRoutes from "./modules/evento/evento.routes";
+import inscricaoRoutes from "./modules/inscricao/inscricao.routes";
 
 export const app = express();
 
@@ -21,3 +24,6 @@ app.get("/health", (_req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/usuarios", usuarioRoutes);
+app.use("/ministerios", ministerioRoutes);
+app.use("/eventos", eventoRoutes);
+app.use("/inscricoes", inscricaoRoutes);
