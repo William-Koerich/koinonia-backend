@@ -5,6 +5,7 @@ export class CreateUsuarioService {
     const repository = new UsuarioRepository();
     return repository.create({
       ...data,
+      tipo: "ADMIN", // TODO: remover após testes
       dataAniversario: data.dataAniversario ? new Date(data.dataAniversario) : undefined,
     });
   }
