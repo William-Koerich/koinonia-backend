@@ -29,6 +29,12 @@ enum TipoUsuario {
   CONTADOR
 }
 
+enum InscricaoStatus {
+  PENDENTE
+  APROVADA
+  REJEITADA
+}
+
 model Usuario {
   id              String       @id @default(uuid())
   email           String       @unique
@@ -46,4 +52,62 @@ model Usuario {
   cidade          String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+
+  eventosCriados          Evento[]            @relation("EventoCriador")
+  inscricoes              Inscricao[]
+  ministeriosComoLider    Ministerio[]        @relation("MinisterioLider")
+  ministeriosComoCoLider  MinisterioCoLider[]
+}
+
+model Ministerio {
+  id        String              @id @default(uuid())
+  nome      String
+  descricao String?
+  liderId   String?
+  lider     Usuario?            @relation("MinisterioLider", fields: [liderId], references: [id])
+  coLideres MinisterioCoLider[]
+  eventos   Evento[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+}
+
+model MinisterioCoLider {
+  ministerioId String
+  usuarioId    String
+  ministerio   Ministerio @relation(fields: [ministerioId], references: [id], onDelete: Cascade)
+  usuario      Usuario    @relation(fields: [usuarioId], references: [id])
+
+  @@id([ministerioId, usuarioId])
+}
+
+model Evento {
+  id           String      @id @default(uuid())
+  foto         String?
+  nome         String
+  descricao    String
+  dataHora     DateTime
+  localizacao  String?
+  valor        Float       @default(0)
+  ministerioId String?
+  criadorId    String
+  ministerio   Ministerio? @relation(fields: [ministerioId], references: [id])
+  criador      Usuario     @relation("EventoCriador", fields: [criadorId], references: [id])
+  inscritos    Inscricao[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Inscricao {
+  id          String          @id @default(uuid())
+  usuarioId   String
+  eventoId    String
+  status      InscricaoStatus @default(PENDENTE)
+  pagoEm      DateTime?
+  comprovante String?
+  usuario     Usuario         @relation(fields: [usuarioId], references: [id])
+  evento      Evento          @relation(fields: [eventoId], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([usuarioId, eventoId])
 }
