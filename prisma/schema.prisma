@@ -19,6 +19,16 @@ enum EstadoCivil {
   UNIAO_ESTAVEL
 }
 
+enum TipoUsuario {
+  ADMIN
+  MEMBRO
+  LIDER
+  CO_LIDER
+  PASTOR
+  TESOUREIRO
+  CONTADOR
+}
+
 model Usuario {
   id              String       @id @default(uuid())
   email           String       @unique
@@ -26,6 +36,8 @@ model Usuario {
   foto            String?
   nome            String
   sobrenome       String
+  tipo            TipoUsuario  @default(MEMBRO)
+  ativo           Boolean      @default(true)
   dataAniversario DateTime?
   genero          Genero?
   estadoCivil     EstadoCivil?
