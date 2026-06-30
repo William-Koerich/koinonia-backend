@@ -18,9 +18,11 @@ const INCLUDE = {
   ministerio: {
     select: {
       id: true, nome: true,
-      liderId: true, coLiderId: true,
+      liderId: true,
       lider: { select: { id: true, nome: true, sobrenome: true } },
-      coLider: { select: { id: true, nome: true, sobrenome: true } },
+      coLideres: {
+        select: { usuario: { select: { id: true, nome: true, sobrenome: true } } },
+      },
     },
   },
   _count: { select: { inscritos: true } },
