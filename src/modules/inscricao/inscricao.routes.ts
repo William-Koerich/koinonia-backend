@@ -64,6 +64,48 @@ router.get('/me', authMiddleware, async (req: Request, res: Response) => {
   }
 })
 
+// Inscrições dos eventos que posso gerenciar (criador, líder/co-líder do ministério, ou admin)
+router.get('/gerenciar', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const requester = await prisma.usuario.findUnique({
+      where: { id: req.userId! },
+      select: { tipo: true },
+    })
+
+    let whereEvento: any
+    if (requester?.tipo === 'ADMIN') {
+      whereEvento = {}
+    } else {
+      const coLiderMinisterios = await prisma.ministerioCoLider.findMany({
+        where: { usuarioId: req.userId! },
+        select: { ministerioId: true },
+      })
+      const ministerioIds = coLiderMinisterios.map(m => m.ministerioId)
+
+      whereEvento = {
+        OR: [
+          { criadorId: req.userId! },
+          { ministerio: { liderId: req.userId! } },
+          ...(ministerioIds.length ? [{ ministerioId: { in: ministerioIds } }] : []),
+        ],
+      }
+    }
+
+    const inscricoes = await prisma.inscricao.findMany({
+      where: { evento: whereEvento },
+      include: {
+        usuario: { select: { id: true, nome: true, sobrenome: true, email: true, foto: true } },
+        evento: { select: { id: true, nome: true, foto: true, dataHora: true, valor: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    res.json(inscricoes)
+  } catch (err: any) {
+    res.status(400).json({ error: err.message })
+  }
+})
+
 // Upload de comprovante de pagamento
 router.post(
   '/:id/comprovante',
