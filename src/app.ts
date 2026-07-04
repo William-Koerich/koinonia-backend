@@ -7,6 +7,7 @@ import authRoutes from "./modules/auth/routes/auth";
 import ministerioRoutes from "./modules/ministerio/ministerio.routes";
 import eventoRoutes from "./modules/evento/evento.routes";
 import inscricaoRoutes from "./modules/inscricao/inscricao.routes";
+import escalaRoutes from "./modules/escala/escala.routes";
 
 export const app = express();
 
@@ -28,6 +29,7 @@ app.use("/usuarios", usuarioRoutes);
 app.use("/ministerios", ministerioRoutes);
 app.use("/eventos", eventoRoutes);
 app.use("/inscricoes", inscricaoRoutes);
+app.use("/escalas", escalaRoutes);
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof multer.MulterError) {

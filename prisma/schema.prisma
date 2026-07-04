@@ -35,6 +35,17 @@ enum InscricaoStatus {
   REJEITADA
 }
 
+enum PosicaoEscala {
+  ESTACIONAMENTO
+  PORTA_PRINCIPAL
+  PORTA_LATERAL
+  DATASHOW
+  TRANSMISSAO
+  CANTINA
+  MIDIAS_CAMERA
+  MIDIAS_STORIES
+}
+
 model Usuario {
   id              String       @id @default(uuid())
   email           String       @unique
@@ -57,6 +68,8 @@ model Usuario {
   inscricoes              Inscricao[]
   ministeriosComoLider    Ministerio[]        @relation("MinisterioLider")
   ministeriosComoCoLider  MinisterioCoLider[]
+  escalasGeradas          Escala[]            @relation("EscalaGerada")
+  escalasAtribuidas       EscalaVaga[]        @relation("EscalaAtribuida")
 }
 
 model Ministerio {
@@ -65,9 +78,10 @@ model Ministerio {
   descricao String?
   liderId   String?
   lider     Usuario?            @relation("MinisterioLider", fields: [liderId], references: [id])
-  coLideres MinisterioCoLider[]
-  eventos   Evento[]
-  createdAt DateTime            @default(now())
+  coLideres    MinisterioCoLider[]
+  eventos      Evento[]
+  escalasVagas EscalaVaga[]
+  createdAt    DateTime            @default(now())
   updatedAt DateTime            @updatedAt
 }
 
@@ -110,4 +124,41 @@ model Inscricao {
   updatedAt   DateTime        @updatedAt
 
   @@unique([usuarioId, eventoId])
+}
+
+model Escala {
+  id        String          @id @default(uuid())
+  mes       Int
+  ano       Int
+  criadorId String
+  criador   Usuario         @relation("EscalaGerada", fields: [criadorId], references: [id])
+  domingos  EscalaDomingo[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@unique([mes, ano])
+}
+
+model EscalaDomingo {
+  id       String       @id @default(uuid())
+  escalaId String
+  escala   Escala       @relation(fields: [escalaId], references: [id], onDelete: Cascade)
+  data     DateTime
+  vagas    EscalaVaga[]
+}
+
+model EscalaVaga {
+  id           String        @id @default(uuid())
+  domingoId    String
+  domingo      EscalaDomingo @relation(fields: [domingoId], references: [id], onDelete: Cascade)
+  posicao      PosicaoEscala
+  slot         Int           @default(1)
+  usuarioId    String?
+  usuario      Usuario?      @relation("EscalaAtribuida", fields: [usuarioId], references: [id])
+  ministerioId String?
+  ministerio   Ministerio?   @relation(fields: [ministerioId], references: [id])
+  grupoCaseiro String?
+  createdAt    DateTime      @default(now())
+
+  @@unique([domingoId, posicao, slot])
 }
