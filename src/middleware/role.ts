@@ -26,3 +26,4 @@ export function requireRole(...roles: TipoUsuario[]) {
 }
 
 export const GESTORES: TipoUsuario[] = ['ADMIN', 'PASTOR', 'LIDER', 'CO_LIDER']
+export const ADMINS: TipoUsuario[] = ['ADMIN', 'PASTOR']

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express'
 import path from 'path'
 import fs from 'fs'
 import { authMiddleware } from '../../middleware/auth'
-import { requireRole, GESTORES } from '../../middleware/role'
+import { requireRole, GESTORES, ADMINS } from '../../middleware/role'
 import { uploadFotoEvento } from '../../middleware/upload'
 import { EventoRepository } from './evento.repository'
 import { prisma } from '../../config/prisma'
@@ -78,6 +78,19 @@ router.put(
       const ev = await repo.findById(id)
       if (!ev) return res.status(404).json({ error: 'Evento não encontrado' })
 
+      // LIDER/CO_LIDER só podem editar eventos que criaram ou do seu ministério
+      const requester = await prisma.usuario.findUnique({ where: { id: req.userId! }, select: { tipo: true } })
+      if (!ADMINS.includes(requester!.tipo)) {
+        const isCreator = ev.criadorId === req.userId
+        const isLider = ev.ministerio?.liderId === req.userId
+        const isCoLider = ev.ministerioId
+          ? !!(await prisma.ministerioCoLider.findFirst({ where: { ministerioId: ev.ministerioId, usuarioId: req.userId! } }))
+          : false
+        if (!isCreator && !isLider && !isCoLider) {
+          return res.status(403).json({ error: 'Sem permissão para editar este evento' })
+        }
+      }
+
       const { nome, descricao, dataHora, localizacao, valor, ministerioId } = req.body
 
       let foto: string | undefined = ev.foto ?? undefined
@@ -104,7 +117,7 @@ router.put(
   },
 )
 
-router.delete('/:id', authMiddleware, requireRole(...GESTORES), async (req: Request, res: Response) => {
+router.delete('/:id', authMiddleware, requireRole(...ADMINS), async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string
     const ev = await repo.findById(id)

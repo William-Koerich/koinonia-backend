@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { authMiddleware } from '../../middleware/auth'
-import { requireRole, GESTORES } from '../../middleware/role'
+import { requireRole, ADMINS } from '../../middleware/role'
 import { MinisterioRepository } from './ministerio.repository'
 
 const router = Router()
@@ -24,7 +24,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
   }
 })
 
-router.post('/', authMiddleware, requireRole(...GESTORES), async (req: Request, res: Response) => {
+router.post('/', authMiddleware, requireRole(...ADMINS), async (req: Request, res: Response) => {
   try {
     const { nome, descricao, liderId, coLideresIds } = req.body
     if (!nome) return res.status(400).json({ error: 'Nome é obrigatório' })
@@ -34,7 +34,7 @@ router.post('/', authMiddleware, requireRole(...GESTORES), async (req: Request, 
   }
 })
 
-router.put('/:id', authMiddleware, requireRole(...GESTORES), async (req: Request, res: Response) => {
+router.put('/:id', authMiddleware, requireRole(...ADMINS), async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string
     const m = await repo.findById(id)
@@ -46,7 +46,7 @@ router.put('/:id', authMiddleware, requireRole(...GESTORES), async (req: Request
   }
 })
 
-router.delete('/:id', authMiddleware, requireRole(...GESTORES), async (req: Request, res: Response) => {
+router.delete('/:id', authMiddleware, requireRole(...ADMINS), async (req: Request, res: Response) => {
   try {
     const m = await repo.findById(req.params.id as string)
     if (!m) return res.status(404).json({ error: 'Ministério não encontrado' })
