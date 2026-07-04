@@ -1,20 +1,20 @@
-import path from 'path'
-import fs from 'fs'
 import { prisma } from '../../../config/prisma'
+import { uploadToCloudinary, deleteFromCloudinary } from '../../../config/cloudinary'
 
 export class UpdateFotoService {
-  async execute(userId: string, newFilePath: string) {
-    // Remove foto antiga se existir
+  async execute(userId: string, buffer: Buffer) {
     const usuario = await prisma.usuario.findUnique({ where: { id: userId }, select: { foto: true } })
-    if (usuario?.foto) {
-      const oldPath = path.resolve(process.cwd(), usuario.foto.replace(/^\//, ''))
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath)
+
+    // Delete old photo from Cloudinary if it was stored there
+    if (usuario?.foto && usuario.foto.startsWith('https://res.cloudinary.com')) {
+      deleteFromCloudinary(usuario.foto)
     }
 
-    const fotoPath = `/uploads/${path.basename(newFilePath)}`
+    const url = await uploadToCloudinary(buffer, 'koinonia/usuarios')
+
     return prisma.usuario.update({
       where: { id: userId },
-      data: { foto: fotoPath },
+      data: { foto: url },
       select: { id: true, foto: true, nome: true, sobrenome: true, email: true },
     })
   }

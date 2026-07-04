@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express'
-import path from 'path'
-import fs from 'fs'
 import { authMiddleware } from '../../middleware/auth'
 import { uploadComprovante } from '../../middleware/upload'
 import { prisma } from '../../config/prisma'
+import { uploadToCloudinary, deleteFromCloudinary } from '../../config/cloudinary'
 
 const router = Router()
 
@@ -123,13 +122,11 @@ router.post(
         return res.status(403).json({ error: 'Sem permissão' })
       }
 
-      // Remove comprovante antigo se existir
-      if (inscricao.comprovante) {
-        const old = path.resolve(process.cwd(), inscricao.comprovante.replace(/^\//, ''))
-        if (fs.existsSync(old)) fs.unlinkSync(old)
+      if (inscricao.comprovante && inscricao.comprovante.startsWith('https://res.cloudinary.com')) {
+        deleteFromCloudinary(inscricao.comprovante)
       }
 
-      const comprovante = `/uploads/comprovantes/${path.basename(req.file.path)}`
+      const comprovante = await uploadToCloudinary(req.file.buffer, 'koinonia/comprovantes')
 
       const updated = await prisma.inscricao.update({
         where: { id: req.params.id as string },

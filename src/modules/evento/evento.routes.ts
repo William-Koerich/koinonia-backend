@@ -1,11 +1,10 @@
 import { Router, Request, Response } from 'express'
-import path from 'path'
-import fs from 'fs'
 import { authMiddleware } from '../../middleware/auth'
 import { requireRole, GESTORES, ADMINS } from '../../middleware/role'
 import { uploadFotoEvento } from '../../middleware/upload'
 import { EventoRepository } from './evento.repository'
 import { prisma } from '../../config/prisma'
+import { uploadToCloudinary, deleteFromCloudinary } from '../../config/cloudinary'
 
 const router = Router()
 const repo = new EventoRepository()
@@ -41,7 +40,7 @@ router.post(
       }
 
       const foto = req.file
-        ? `/uploads/eventos/${path.basename(req.file.path)}`
+        ? await uploadToCloudinary(req.file.buffer, 'koinonia/eventos')
         : undefined
 
       const evento = await repo.create({
@@ -55,7 +54,6 @@ router.post(
         criadorId: req.userId!,
       })
 
-      // Auto-inscrever criador como APROVADA
       await prisma.inscricao.create({
         data: { usuarioId: req.userId!, eventoId: evento.id, status: 'APROVADA', pagoEm: new Date() },
       }).catch(() => {})
@@ -78,7 +76,6 @@ router.put(
       const ev = await repo.findById(id)
       if (!ev) return res.status(404).json({ error: 'Evento não encontrado' })
 
-      // LIDER/CO_LIDER só podem editar eventos que criaram ou do seu ministério
       const requester = await prisma.usuario.findUnique({ where: { id: req.userId! }, select: { tipo: true } })
       if (!ADMINS.includes(requester!.tipo)) {
         const isCreator = ev.criadorId === req.userId
@@ -95,11 +92,10 @@ router.put(
 
       let foto: string | undefined = ev.foto ?? undefined
       if (req.file) {
-        if (ev.foto) {
-          const old = path.resolve(process.cwd(), ev.foto.replace(/^\//, ''))
-          if (fs.existsSync(old)) fs.unlinkSync(old)
+        if (ev.foto && ev.foto.startsWith('https://res.cloudinary.com')) {
+          deleteFromCloudinary(ev.foto)
         }
-        foto = `/uploads/eventos/${path.basename(req.file.path)}`
+        foto = await uploadToCloudinary(req.file.buffer, 'koinonia/eventos')
       }
 
       res.json(await repo.update(id, {
@@ -123,9 +119,8 @@ router.delete('/:id', authMiddleware, requireRole(...ADMINS), async (req: Reques
     const ev = await repo.findById(id)
     if (!ev) return res.status(404).json({ error: 'Evento não encontrado' })
 
-    if (ev.foto) {
-      const p = path.resolve(process.cwd(), ev.foto.replace(/^\//, ''))
-      if (fs.existsSync(p)) fs.unlinkSync(p)
+    if (ev.foto && ev.foto.startsWith('https://res.cloudinary.com')) {
+      deleteFromCloudinary(ev.foto)
     }
 
     await repo.delete(id)
@@ -135,22 +130,15 @@ router.delete('/:id', authMiddleware, requireRole(...ADMINS), async (req: Reques
   }
 })
 
-// Inscritos por evento (apenas criador/lider/colider/admin)
 router.get('/:id/inscritos', authMiddleware, async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string
     const ev = await repo.findById(id)
     if (!ev) return res.status(404).json({ error: 'Evento não encontrado' })
 
-    const requester = await prisma.usuario.findUnique({
-      where: { id: req.userId! },
-      select: { tipo: true },
-    })
-
+    const requester = await prisma.usuario.findUnique({ where: { id: req.userId! }, select: { tipo: true } })
     const isCoLider = ev.ministerioId
-      ? await prisma.ministerioCoLider.findFirst({
-          where: { ministerioId: ev.ministerioId, usuarioId: req.userId! },
-        })
+      ? await prisma.ministerioCoLider.findFirst({ where: { ministerioId: ev.ministerioId, usuarioId: req.userId! } })
       : null
 
     const canView =
@@ -159,9 +147,7 @@ router.get('/:id/inscritos', authMiddleware, async (req: Request, res: Response)
       ev.ministerio?.liderId === req.userId ||
       !!isCoLider
 
-    if (!canView) {
-      return res.status(403).json({ error: 'Sem permissão para visualizar inscritos' })
-    }
+    if (!canView) return res.status(403).json({ error: 'Sem permissão para visualizar inscritos' })
 
     res.json(await repo.findInscritos(id))
   } catch (err: any) {

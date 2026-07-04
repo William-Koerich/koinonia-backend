@@ -1,6 +1,5 @@
 import multer from 'multer'
 import path from 'path'
-import fs from 'fs'
 import { Request } from 'express'
 
 const fileFilter = (
@@ -16,25 +15,10 @@ const fileFilter = (
   }
 }
 
-function createUpload(subdir?: string) {
-  const dir = subdir
-    ? path.resolve(process.cwd(), 'uploads', subdir)
-    : path.resolve(process.cwd(), 'uploads')
+// Memory storage: files available at req.file.buffer, uploaded to Cloudinary
+const memStorage = multer.memoryStorage()
+const opts = { storage: memStorage, fileFilter, limits: { fileSize: 15 * 1024 * 1024 } }
 
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-
-  const storage = multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, dir),
-    filename: (req: Request, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase()
-      const userId = req.userId ?? 'anon'
-      cb(null, `${userId}-${Date.now()}${ext}`)
-    },
-  })
-
-  return multer({ storage, fileFilter, limits: { fileSize: 15 * 1024 * 1024 } })
-}
-
-export const uploadFoto = createUpload()
-export const uploadFotoEvento = createUpload('eventos')
-export const uploadComprovante = createUpload('comprovantes')
+export const uploadFoto = multer(opts)
+export const uploadFotoEvento = multer(opts)
+export const uploadComprovante = multer(opts)

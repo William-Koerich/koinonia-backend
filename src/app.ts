@@ -1,6 +1,5 @@
 import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
-import path from "path";
 import multer from "multer";
 import usuarioRoutes from "./modules/usuario/routes/usuario";
 import authRoutes from "./modules/auth/routes/auth";
@@ -18,7 +17,6 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

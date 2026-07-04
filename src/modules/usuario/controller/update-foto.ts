@@ -6,7 +6,7 @@ export class UpdateFotoController {
     try {
       if (!req.file) throw new Error('Nenhum arquivo enviado')
       const service = new UpdateFotoService()
-      const result = await service.execute(req.userId!, req.file.path)
+      const result = await service.execute(req.userId!, req.file.buffer)
       return res.json(result)
     } catch (err: any) {
       return res.status(400).json({ error: err.message })
