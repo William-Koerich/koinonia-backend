@@ -7,11 +7,12 @@ const router = Router()
 
 function getSundaysOfMonth(mes: number, ano: number): Date[] {
   const sundays: Date[] = []
-  const date = new Date(ano, mes - 1, 1)
-  while (date.getDay() !== 0) date.setDate(date.getDate() + 1)
-  while (date.getMonth() === mes - 1) {
+  // Use noon UTC to avoid timezone day-shift (midnight UTC becomes previous day in UTC-3 Brazil)
+  const date = new Date(Date.UTC(ano, mes - 1, 1, 12, 0, 0))
+  while (date.getUTCDay() !== 0) date.setUTCDate(date.getUTCDate() + 1)
+  while (date.getUTCMonth() === mes - 1) {
     sundays.push(new Date(date))
-    date.setDate(date.getDate() + 7)
+    date.setUTCDate(date.getUTCDate() + 7)
   }
   return sundays
 }
