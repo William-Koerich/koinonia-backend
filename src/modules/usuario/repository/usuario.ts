@@ -62,6 +62,34 @@ export class UsuarioRepository {
     });
   }
 
+  async findPaginated(opts: { q?: string; page?: number; limit?: number }) {
+    const { q = "", page = 1, limit = 10 } = opts;
+    const where = q
+      ? {
+          ativo: true,
+          OR: [
+            { nome: { contains: q, mode: "insensitive" as const } },
+            { sobrenome: { contains: q, mode: "insensitive" as const } },
+            { email: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : { ativo: true };
+
+    const SELECT = { id: true, nome: true, sobrenome: true, foto: true, tipo: true };
+    const [data, total] = await Promise.all([
+      prisma.usuario.findMany({
+        where,
+        select: SELECT,
+        orderBy: { nome: "asc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.usuario.count({ where }),
+    ]);
+
+    return { data, total, page, pages: Math.ceil(total / limit) || 1 };
+  }
+
   async findById(id: string) {
     return prisma.usuario.findUnique({ where: { id } });
   }
